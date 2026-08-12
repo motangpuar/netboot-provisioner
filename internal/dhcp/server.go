@@ -121,6 +121,7 @@ func (e *Engine) handler(conn net.PacketConn, peer net.Addr, m *dhcpv4.DHCPv4) {
 	fd := filedata.Gather()
 	var offerIP string
 	var bootFileName string
+	var offerGateway string
 	
 	// O(1) Lookup based on DHCP RequestMAC
 	isClient := fd.Clients[reqMAC]
@@ -130,8 +131,12 @@ func (e *Engine) handler(conn net.PacketConn, peer net.Addr, m *dhcpv4.DHCPv4) {
 		cMACAddress := isClient.MACAddress()
 		cOfferIP := isClient.OfferIP()
 		cBootFileName := isClient.BootFileUrl()
+
+		// POpulate
 		offerIP = cOfferIP
+		offerGateway = isClient.OfferGateway()
 		bootFileName = cBootFileName
+
 		log.Printf("IP: %s, Mac: %s, File: %s", cOfferIP, cMACAddress, bootFileName)
 	} else {
 		log.Printf("Client %s Not Found on DB", reqMAC)
@@ -148,8 +153,7 @@ func (e *Engine) handler(conn net.PacketConn, peer net.Addr, m *dhcpv4.DHCPv4) {
         log.Printf("DHCP: Using unicast response for client")
     }
 
-    serverIP := net.ParseIP("192.168.99.1")
-	offerGateway := "192.168.99.1"
+    serverIP := net.ParseIP(offerGateway)
 
     log.Printf("Offering IP %s to client %s (Gateway: %s)", offerIP, m.ClientHWAddr.String(), offerGateway)
 	

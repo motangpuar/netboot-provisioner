@@ -1,17 +1,19 @@
 #!/bin/bash
 
-VM="centos-stream-10-vm"
+VM="ims-debian-cluster-01"
+BRIDGE="br1"
+MAC="52:54:00:e2:47:eb"
 
 # 1. Generate XML (VM is NOT created/started)
 sudo virt-install \
   --name "$VM" \
   --memory 8192 \
   --vcpus 2 \
-  --disk path=/var/lib/libvirt/images/centos-stream-10.qcow2,size=20,format=qcow2 \
-  --network bridge=br0,model=virtio \
+  --disk path=/var/lib/libvirt/images/${VM}.qcow2,size=20,format=qcow2 \
+  --network bridge=br1,model=virtio,mac=${MAC} \
   --boot uefi,network \
   --graphics vnc,listen=0.0.0.0 \
-  --os-variant centos-stream9 \
+  --os-variant debian12 \
   --print-xml > /tmp/vm.xml
 
 # 2. Remove the existing firmware, loader, and nvram lines

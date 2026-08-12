@@ -37,19 +37,6 @@ type K3sCreds struct {
 	Token  string `json:"token"`
 }
 
-
-type K3sConfig struct {
-	ServerIP          string
-	DisableComponents string
-	// CPU
-	CPUManagerPolicy  string // static or none
-	SystemReservedCPU string // e.g. "0-1"
-	KubeReservedCPU   string // e.g. "2"
-	// Memory
-	SystemReservedMem string // e.g. "512Mi"
-	KubeReservedMem   string // e.g. "256Mi"
-}
-
 func writeTemp(pattern string, data []byte, perm os.FileMode)(string, func()){
 	f,err := os.CreateTemp("", pattern)
 	if err != nil {

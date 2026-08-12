@@ -25,6 +25,7 @@ import "github.com/motangpuar/o2-ims-worker/internal/ansible"
 //
 type Client interface { 
 	OfferIP() string
+	OfferGateway() string
 	MACAddress() string
 	BootFileUrl() string
 	OSType() string
@@ -37,6 +38,7 @@ type Client interface {
 type dhcpClients struct {
 	userID string
 	offerIP string
+	offerGateway string
 	macAddress string
 	bootFileUrl string
 	osType string
@@ -172,6 +174,7 @@ func Populate() {
 		currCluster := read_lines[4]
 		currTemplate := read_lines[5]
 		currRole := read_lines[6]
+		currGW := read_lines[7]
 
 		if currCluster == "" {
 			currCluster = "unclaimed"
@@ -189,6 +192,7 @@ func Populate() {
 
 		currClient := &dhcpClients{
 				offerIP: currIP,
+				offerGateway: currGW,
 				macAddress: currMAC,
 				bootFileUrl: currFileUrl,
 				osType: currOS,
@@ -261,6 +265,7 @@ func Gather() *ptrClients {
 
 // Client Specific Values
 func (d *dhcpClients) OfferIP() string { return d.offerIP }
+func (d *dhcpClients) OfferGateway() string { return d.offerGateway }
 func (d *dhcpClients) MACAddress() string { return d.macAddress }
 func (d *dhcpClients) BootFileUrl() string { return d.bootFileUrl }
 func (d *dhcpClients) OSType() string { return d.osType }
