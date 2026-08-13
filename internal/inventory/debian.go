@@ -74,7 +74,7 @@ func readSSHKey(m string) (map[string]string, error) {
 }
 
 // Generators
-func genDebianSeed(id string, mac string) {
+func genDebianSeed(id string, mac string) *DebianConfig {
 
 	sshKey,err :=  readSSHKey(mac)
 	if err != nil {
@@ -107,6 +107,9 @@ func genDebianSeed(id string, mac string) {
 	templateFile := "templates/debian.tmpl"
 	dumpFile := "assets/http/debian/preseed-" + id + ".cfg"
 
+	// Dynamic Hostname
+	currentConfig.BaseConfig.Hostname = id
+
 	tmpl, err := template.ParseFiles(templateFile)
 	if err != nil {
 		log.Fatalf("[FAIL] failed to parse debian template: %v", err)
@@ -121,9 +124,11 @@ func genDebianSeed(id string, mac string) {
 	if err := tmpl.Execute(outFile, currentConfig); err != nil {
 		log.Fatalf("[FAIL] failed to execute debian template: %v", err)
 	}
+
+	return &currentConfig
 }
 
-func genCentOSSeed(id string, mac string) {
+func genCentOSSeed(id string, mac string) *CentOSConfig{
 	sshKey,err :=  readSSHKey(mac)
 	if err != nil {
 		log.Printf("Error read SSH key: %v", err)
@@ -167,9 +172,11 @@ func genCentOSSeed(id string, mac string) {
 	if err := tmpl.Execute(outFile, currentConfig); err != nil {
 		log.Fatalf("[FAIL] failed to execute centos template: %v", err)
 	}
+
+	return &currentConfig
 }
 
-func genUbuntuSeed(id string, mac string) {
+func genUbuntuSeed(id string, mac string) *UbuntuConfig{
 	sshKey,err :=  readSSHKey(mac)
 	if err != nil {
 		log.Printf("Error read SSH key: %v", err)
@@ -217,4 +224,6 @@ func genUbuntuSeed(id string, mac string) {
 	if err := os.WriteFile(metaFile, []byte(""), 0644); err != nil {
 		log.Fatalf("[FAIL] failed to create ubuntu meta-data: %v", err)
 	}
+
+	return &currentConfig
 }

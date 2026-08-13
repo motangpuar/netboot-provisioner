@@ -4,7 +4,7 @@ d-i keyboard-configuration/xkb-keymap select {{ .Keymap }}
 
 # Network
 d-i netcfg/choose_interface select {{ .Interface }}
-d-i netcfg/get_hostname string {{ .Hostname }}
+d-i netcfg/hostname string {{ .Hostname }}
 d-i netcfg/get_domain string {{ .Domain }}
 
 # Mirror

@@ -50,8 +50,8 @@ func writeTemp(pattern string, data []byte, perm os.FileMode)(string, func()){
 
 	log.Printf("[ANSIBLE] Temp File name is %s", f.Name())
 
-	//return f.Name(), func() { log.Printf("Not Delete: %s", pattern) }
-	return f.Name(), func() { os.Remove(f.Name()) }
+	return f.Name(), func() { log.Printf("Not Delete: %s", pattern) }
+	//return f.Name(), func() { os.Remove(f.Name()) }
 
 }
 
@@ -81,6 +81,7 @@ func extractCreds(res ansiblejson.AnsiblePlaybookJSONResults) (*K3sCreds, error)
 }
 
 func FetchToken(targetIP, userName, macAddress string) (*K3sCreds, error) {
+	log.Printf("[ANSIBLE] Fetch token mode...")
 	sshKey, _ := os.ReadFile("assets/keys/test_provisioner")
 	var playbookYAML []byte
 	chunk, err := os.ReadFile("templates/ansible/k3s-fetch-token.yaml")

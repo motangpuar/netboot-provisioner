@@ -1,11 +1,13 @@
 package inventory
 
-import "log"
-import "fmt"
-import "text/template"
-import "os"
-import "strings"
-import "time"
+import (
+	"fmt"
+	"log"
+	"os"
+	"strings"
+	"text/template"
+	"time"
+)
 
 type CentOSSpecific struct {
 	Initrd string
@@ -13,6 +15,7 @@ type CentOSSpecific struct {
 	InstallKickStartURL string
 	InstallRepoURL string
 	Stage2 string
+	PreSeedDetails *CentOSConfig
 }
 
 type RHELSpecific struct {
@@ -21,13 +24,17 @@ type RHELSpecific struct {
 type DebianSpecific struct {
 	Initrd string
 	PreeSeedURL string
+	Hostname string
+	Domain string
+	PreSeedDetails *DebianConfig
 }
 
 type CoreOSSpecifc struct {
 	Initrd string
 	RootFSURL string
 	InstallDev string
-	IgnitionURL string }
+	IgnitionURL string
+}
 
 type UbuntuSpecific struct {
 	Initrd string
@@ -36,6 +43,7 @@ type UbuntuSpecific struct {
 	CloudConfigURL string
 	DS string
 	RootPath string
+	PreSeedDetails *UbuntuConfig
 }
 
 // Main Struc
@@ -98,7 +106,6 @@ func (mobj *MachineObject) Generate(ip, m, t, c, role, ansibleTemplate string) *
 	log.Printf("[Inventory Realm]--------------------")
 	log.Printf("[Inventory] Procsesing for %s", m)
 
-	var osDetails any
 	var targetMachine MachineObject
 	macAsID := strings.ReplaceAll(m, ":", "-")
 
@@ -113,18 +120,22 @@ func (mobj *MachineObject) Generate(ip, m, t, c, role, ansibleTemplate string) *
 
 	switch t {
 	case "centos":
+		var osDetails CentOSSpecific
+		currentConfig := genCentOSSeed(macAsID, m)
 		osDetails = CentOSSpecific{
 			Initrd: "/images/centos/initrd.img",
 			InstallKickStartURL: "http://192.168.99.1:8033/centos/"+macAsID+"/install.ks",
 			InstallRepoURL: "http://192.168.99.1:8033/centos/mirror/",
 			Stage2: "http://192.168.99.1:8033/centos/mirror",
+			PreSeedDetails: currentConfig,
 		}
 		targetMachine.OSName="Centos Stream 10"
 		targetMachine.OSType=t
 		targetMachine.Kernel="/images/centos/vmlinuz"
 		targetMachine.OSData=osDetails
-		genCentOSSeed(macAsID, m)
 	case "ubuntu":
+		var osDetails UbuntuSpecific
+		currentConfig := genUbuntuSeed(macAsID, m)
 		osDetails = UbuntuSpecific{
 			Initrd: "/images/ubuntu/initrd",
 			//ISOUrl: "http://192.168.99.1:8033/ubuntu/iso/ubuntu-26.04-desktop-amd64.iso",
@@ -132,25 +143,29 @@ func (mobj *MachineObject) Generate(ip, m, t, c, role, ansibleTemplate string) *
 			CloudConfigURL: "/dev/null",
 			DS: "http://192.168.99.1:8033/ubuntu/"+macAsID+"/",
 			RootPath: "/dev/ram0",
+			PreSeedDetails: currentConfig,
 		}
 		targetMachine.OSName="Ubuntu 20.04"
 		targetMachine.OSType=t
 		targetMachine.Kernel="/images/ubuntu/linux"
 		targetMachine.OSData=osDetails
-		genUbuntuSeed(macAsID, m)
 	case "debian":
+		var osDetails DebianSpecific
+		// Generate Debian PreSeed
+		currentConfig := genDebianSeed(macAsID, m)
 		osDetails = DebianSpecific{
 			Initrd: "/images/debian/initrd.gz",
 			PreeSeedURL: "http://192.168.99.1:8033/debian/preseed-"+macAsID+".cfg",
+			PreSeedDetails: currentConfig,
 		}
 		targetMachine.OSName="Debian 12"
 		targetMachine.OSType=t
 		targetMachine.Kernel="/images/debian/linux"
+		osDetails.Hostname = osDetails.PreSeedDetails.Hostname 
+		osDetails.Domain = osDetails.PreSeedDetails.Domain 
 		targetMachine.OSData=osDetails
-
-		// Generate Debian PreSeed
-		genDebianSeed(macAsID, m)
 	}
+	
 
 	//Generate Grub Entry
 	genPXEEntry("bios", m, &targetMachine) 

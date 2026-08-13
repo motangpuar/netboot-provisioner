@@ -33,6 +33,8 @@ menuentry "Install {{.OSName}} for {{.ID}}" {
     linux {{.Kernel}} \
         auto=true \
         preseed/url={{.OSData.PreeSeedURL}} \
+        netcfg/get_hostname={{.OSData.Hostname}} \
+        netcfg/get_domain={{.OSData.Domain}} \
         priority=critical
     initrd {{.OSData.Initrd}}
 }

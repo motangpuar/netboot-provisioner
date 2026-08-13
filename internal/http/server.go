@@ -212,40 +212,62 @@ func handleAnsible(w http.ResponseWriter, r *http.Request){
 		username := value.OSType()
 		template := value.GetTemplate()
 		cluster := value.GetCluster()
-		clusterDump,err := kubeclient.GetClusters(*httpContext)
+		role := value.GetMachines().Role
 
-		nodes := clusterDump.Cluster[cluster].Info.Nodes
+		// This should be worker specific
 		var nodeObj struct {
 		    Name string
 		    IP   string
 		    Mac  string
 		    Role string
 		}
-		for _,n := range(nodes) {
-			log.Printf("Process Node %s", n.Name)
-			for _, r := range(n.Roles) {
-				if r == "control-plane" {
-					var dumpMac string
-					var dumpName string
-					for _, m := range(clients){
-						// Find Mac and IP of this shit
-						if m.GetMachines().IP == n.InternalIP {
-							dumpName = m.GetMachines().OSType
-							dumpMac = m.MACAddress()
+		if role != "master" {
+			clusterDump,err := kubeclient.GetClusters(*httpContext)
+
+			if err != nil {
+				log.Printf("[HTTP] Cluster is empty")
+				http.Error(w, "Cluster is broken: "+err.Error(), http.StatusInternalServerError)
+			}
+
+			nodes := clusterDump.Cluster[cluster].Info.Nodes
+			for _,n := range(nodes) {
+				log.Printf("Process Node %s", n.Name)
+				for _, r := range(n.Roles) {
+					if r == "control-plane" {
+						var dumpMac string
+						var dumpName string
+						for _, m := range(clients){
+							// Find Mac and IP of this shit
+							if m.GetMachines().IP == n.InternalIP {
+								dumpName = m.GetMachines().OSType
+								dumpMac = m.MACAddress()
+							}
+						}
+						nodeObj = struct {
+							Name string
+							IP string
+							Mac string
+							Role string
+						}{
+							Name: dumpName,
+							IP: n.InternalIP,
+							Mac: dumpMac,
+							Role: r,
 						}
 					}
-					nodeObj = struct {
-						Name string
-						IP string
-						Mac string
-						Role string
-					}{
-						Name: dumpName,
-						IP: n.InternalIP,
-						Mac: dumpMac,
-						Role: r,
-					}
 				}
+			}
+		} else {
+			nodeObj = struct {
+				Name string
+				IP string
+				Mac string
+				Role string
+			}{
+				Name: "",
+				IP: "",
+				Mac: "",
+				Role: "",
 			}
 		}
 
