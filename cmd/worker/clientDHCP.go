@@ -36,17 +36,22 @@ func main() {
 		nclient4.WithTimeout(10*time.Second),
 		nclient4.WithRetry(3),
 	)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[ERROR] Failed to create DHCP client %v", err)
+		os.Exit(1)
+	}
 	defer client.Close()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERROR] Failed to create DHCP client %v", err)
-		os.Exit(1)
-	}
-
 	lease,err := client.Request(ctx)
+	if err != nil {
+		log.Fatalf("DHCP request failed: %v", err)
+	}
+	if lease == nil || lease.ACK == nil {
+		log.Fatal("DHCP request returned an empty lease")
+	}
 
 	log.Println("Lease Summary: ")
 	log.Println(lease.ACK.Summary())
