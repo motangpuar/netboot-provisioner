@@ -3,7 +3,6 @@ assets/
 bin/
 var/
 
-go.sum
 go.work
 go.work.sum
 build/
