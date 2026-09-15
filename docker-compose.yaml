@@ -1,36 +1,53 @@
-version: '2'
 services:
-  nginx:
-    image: nginx:latest
-    container_name: nginx-netboot
-    ports:
-      - "80:80"
-    volumes:
-      - ./confs/nginx.conf:/etc/nginx/nginx.conf:z
-      - ./assets/boot:/usr/share/nginx/html/boot:z
-  postgres:
-    container_name: postgres
-    image: postgres:9.6
-    volumes:
-      - ./scripts/create-db.sql:/docker-entrypoint-initdb.d/create-db.sql:Z
-    environment:
-      - POSTGRES_USER=nnag
-      - POSTGRES_PASSWORD=password
-    ports:
-      - "54321:5432"
-  ims-worker:
-    container: pxe-boot
-    image: localhost/ims-worker:latest
-    command: "/usr/bin/ims-worker"
-    env_file: ".env"
+  worker:
+    image: ghcr.io/motangpuar/netboot-provisioner:${TAG:-latest}
+    # build: .        # uncomment for local dev
+    container_name: netboot-worker
+    restart: unless-stopped
+
+    # DHCP/TFTP are L2 — host networking is mandatory.
+    # The container shares the host's eth0/br0 directly.
     network_mode: host
+
+    # Raw sockets + bind to privileged ports (<1024) + SO_BINDTODEVICE
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - NET_BIND_SERVICE
+
     environment:
-      - IMS_API=http://10.1.0.42:8080/
+      # --- General ---
+      SECRET_KEY:            ${SECRET_KEY:?SECRET_KEY is required}
+
+      # --- DHCP ---
+      DHCP_ENABLE:           "true"
+      DHCP_BIND_INTERFACE:   ${DHCP_BIND_INTERFACE:-br0}
+      DHCP_BOOT_FILE:        ${DHCP_BOOT_FILE:-bios/pxelinux.0}
+      # DHCP_BIND_ADDRESS, DHCP_TFTP_IP, DHCP_NEXT_SERVER_IP
+      # are auto-derived from DHCP_BIND_INTERFACE.
+      # Override only for multi-homed hosts:
+      # DHCP_TFTP_IP:        "192.168.100.1"
+      # DHCP_NEXT_SERVER_IP: "192.168.100.1"
+      # --- TFTP ---
+      TFTP_ENABLE:           "true"
+      TFTP_BLOCKSIZE:        "1468"
+
+      TZ: UTC
+
     volumes:
-      # Uncomment this to mount form build path
-      - ./build/ims-worker:/usr/bin/ims-worker:z
-      - ./assets/boot/:/var/lib/tftpboot/boot:z
-      - ./pxelinux.cfg:/var/lib/tftpboot/pxelinux.cfg:z
-      - /root/.kube/config:/root/.kube/config:z
-    privileged:
-      - true
+      # Persist generated boot files across restarts
+      - ./assets:/app/assets
+      # Persist the machine inventory
+      - ./inputs:/app/inputs
+      # Uncomment to live-edit templates without rebuilding the image:
+      # - ./templates:/app/templates:ro
+
+    # Sensible defaults so a misconfigured run doesn't hang
+    stop_grace_period: 10s
+
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8033/test"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s

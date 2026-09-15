@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"text/template"
+	"github.com/motangpuar/o2-ims-worker/internal/config"
 )
 
 // Base
@@ -52,7 +53,8 @@ type UbuntuConfig struct {
 
 
 func readSSHKey(m string) (map[string]string, error) {
-	data, err := os.Open("assets/keys/test_provisioner.pub")
+	sshKeyPath := config.Gather().General.GetSSHKeyPath()
+	data, err := os.Open(sshKeyPath+".pub")
 	if err != nil {
 		log.Printf("Error reading SSH keys %v", err)
 		return nil, fmt.Errorf("Error reading SSH keys") 

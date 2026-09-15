@@ -213,3 +213,16 @@ internal/
 - RHEL 9.2 tested successfully on an Intel NUC, RHEL 9.5 failed
 - Deployed and tested on a remote subnet (192.168.8.0/24)
 
+### Endpoints Tests
+
+```bash
+curl -i -X POST http://localhost:8033/pipeline \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "node-192.168.99.200",
+    "mac":  "52:54:00:8f:c1:32",
+    "ip":   "192.168.99.200",
+    "os":   "centos"
+  }'
+```
+

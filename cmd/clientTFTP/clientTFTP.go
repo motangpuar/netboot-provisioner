@@ -26,7 +26,7 @@ func main() {
 	log.Printf("...")
 	c, err := tftp.NewClient(fullAddr)
 	if err != nil {
-		fmt.Println("Failed to established connection %v", err)
+		fmt.Printf("Failed to established connection %v", err)
 	}
 
 	c.SetTimeout(time.Duration(timeOutInt) * time.Second)
@@ -38,14 +38,14 @@ func main() {
 
 	wFile, err := os.Create("downloaded_dump.bin")
 	if err != nil {
-		fmt.Println("Failed to create local file %v", err)
+		fmt.Printf("Failed to create local file %v", err)
 	}
 
 	defer wFile.Close()
 	
 	n, err := wt.WriteTo(wFile)
 	if err != nil {
-		fmt.Println("Failed to download %v", err)
+		fmt.Printf("Failed to download %v", err)
 	}
 	
 	log.Printf("Success transferred %d Byte", n)

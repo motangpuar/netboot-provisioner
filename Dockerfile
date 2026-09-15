@@ -1,59 +1,37 @@
-FROM alpine:3.20.3
+# ---------- build ----------
+FROM golang:1.26-alpine AS builder
 
-LABEL maintainer "ninoagus@protonmail.com"
+WORKDIR /src
 
-# Install the necessary packages
-RUN apk add --no-cache \
-    bash \
-    unzip \
-    dnsmasq \
-    ca-certificates \
-    gcompat \
-    wget \
-    make \
-    gcc \
-    musl-dev \
-    git
+COPY go.mod go.sum ./
+RUN go mod download
 
-# Install Go 1.24.0 manually
-RUN wget https://go.dev/dl/go1.24.0.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzf go1.24.0.linux-amd64.tar.gz && \
-    rm go1.24.0.linux-amd64.tar.gz
-
-# Set Go environment
-ENV PATH=/usr/local/go/bin:$PATH
-ENV GOPATH=/go
-ENV CGO_ENABLED=1
-
-
-ENV MEMTEST_VERSION 5.31b
-ENV SYSLINUX_VERSION 6.03
-ENV TEMP_SYSLINUX_PATH /tmp/syslinux-"$SYSLINUX_VERSION"
-
-WORKDIR /tmp/ims-worker
 COPY . .
-RUN go mod tidy && make build
-#RUN cp build/ims-worker /usr/bin/ims-worker
+RUN CGO_ENABLED=0 GOOS=linux go build \
+      -ldflags="-s -w" \
+      -o /out/worker ./cmd/worker
 
+# ---------- runtime ----------
+FROM alpine:3.20
 
-WORKDIR /tmp
-RUN \
-  mkdir -p "$TEMP_SYSLINUX_PATH" \
-  && wget -q https://www.kernel.org/pub/linux/utils/boot/syslinux/syslinux-"$SYSLINUX_VERSION".tar.gz \
-  && tar -xzf syslinux-"$SYSLINUX_VERSION".tar.gz \
-  && mkdir -p /var/lib/tftpboot \
-  && cp "$TEMP_SYSLINUX_PATH"/bios/core/pxelinux.0 /var/lib/tftpboot/ \
-  && cp "$TEMP_SYSLINUX_PATH"/bios/com32/libutil/libutil.c32 /var/lib/tftpboot/ \
-  && cp "$TEMP_SYSLINUX_PATH"/bios/com32/elflink/ldlinux/ldlinux.c32 /var/lib/tftpboot/ \
-  && cp "$TEMP_SYSLINUX_PATH"/bios/com32/menu/menu.c32 /var/lib/tftpboot/ \
-  && rm -rf "$TEMP_SYSLINUX_PATH" \
-  && rm /tmp/syslinux-"$SYSLINUX_VERSION".tar.gz \
-  && wget -q http://www.memtest.org/download/archives/"$MEMTEST_VERSION"/memtest86+-"$MEMTEST_VERSION".bin.gz \
-  && gzip -d memtest86+-"$MEMTEST_VERSION".bin.gz \
-  && mkdir -p /var/lib/tftpboot/memtest \
-  && mv memtest86+-$MEMTEST_VERSION.bin /var/lib/tftpboot/memtest/memtest86+
+RUN apk add --no-cache ca-certificates tzdata iproute2 && \
+    adduser -D -u 10001 worker
 
-#RUN mkdir -p /var/lib/tftpboot/pxelinuc.cfg/
-#COPY pxelinux.cfg/ /var/lib/tftpboot/pxelinux.cfg/
+WORKDIR /app
 
-#COPY build/ims-worker /usr/bin/ims-worker
+# Binary
+COPY --from=builder /out/worker /app/worker
+
+# Baked-in read-only seed data
+COPY templates/ /app/templates/
+COPY inputs/    /app/inputs/
+
+# Writable runtime dirs (assets are generated at runtime)
+RUN mkdir -p /app/assets && \
+    chown -R worker:worker /app/assets /app/inputs
+
+USER worker
+
+EXPOSE 8033/udp 8033/tcp 69/udp 67/udp
+
+ENTRYPOINT ["/app/worker"]

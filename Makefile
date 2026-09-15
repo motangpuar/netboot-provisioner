@@ -35,6 +35,7 @@ generate_keys:
 	fi
 
 build:
+	go vet ./cmd/worker
 	go build -o bin/worker cmd/worker/main.go 
 
 build_client:

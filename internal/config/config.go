@@ -1,7 +1,5 @@
 package config
 
-import "flag"
-import "fmt"
 import "os"
 import "strconv"
 
@@ -32,18 +30,10 @@ type Master struct {
 
 type GeneralConfig struct {
 	secretKey string
+	sshKeyPath string
 }
 
 func Gather() *Master {
-	var (
-		kubeconfig = flag.String("kubeconfig", "/tmp/admin.conf", "Path of admin.conf")
-		insecure = flag.Bool("insecure", false, "skip TLS Verification")
-	)
-
-	flag.Parse()
-
-	fmt.Println(*kubeconfig)
-	fmt.Println(*insecure)
 
 	// Initialize Struct with Values first
 	tftpConfig := TFTPConfig{
@@ -111,6 +101,9 @@ func Gather() *Master {
 	if val := os.Getenv("SECRET_KEY"); val != "" {
 		generalConfig.secretKey = val
 	}
+	if val := os.Getenv("SSH_KEY_PATH"); val != "" {
+		generalConfig.sshKeyPath = val
+	}
 
 	if val := os.Getenv("DHCP_ENABLE"); val != "" {
 		if boolVal,err := strconv.ParseBool(val); err == nil {
@@ -177,4 +170,5 @@ func (t *TFTPConfig) BlockSize() int { return t.blockSize }
 
 // General Methods
 func (g *GeneralConfig) GetSecret() string { return g.secretKey } 
+func (g *GeneralConfig) GetSSHKeyPath() string { return g.sshKeyPath } 
 

@@ -16,6 +16,7 @@ import (
 
 	//Internals
 	"github.com/motangpuar/o2-ims-worker/internal/kubernetes"
+	"github.com/motangpuar/o2-ims-worker/internal/config"
 )
 
 type template struct {
@@ -82,7 +83,9 @@ func extractCreds(res ansiblejson.AnsiblePlaybookJSONResults) (*K3sCreds, error)
 
 func FetchToken(targetIP, userName, macAddress string) (*K3sCreds, error) {
 	log.Printf("[ANSIBLE] Fetch token mode...")
-	sshKey, _ := os.ReadFile("assets/keys/test_provisioner")
+
+	sshKeyPath := config.Gather().General.GetSSHKeyPath()
+	sshKey, _ := os.ReadFile(sshKeyPath)
 	var playbookYAML []byte
 	chunk, err := os.ReadFile("templates/ansible/k3s-fetch-token.yaml")
 	if err != nil {
@@ -158,7 +161,8 @@ func Populate(targetIP, macAddress, userName, templateMode string, nodeObj struc
 	Role string
 }) (*ansiblejson.AnsiblePlaybookJSONResults,error) {
 
-	sshKey, _ := os.ReadFile("assets/keys/test_provisioner")
+	sshKeyPath := config.Gather().General.GetSSHKeyPath()
+	sshKey, _ := os.ReadFile(sshKeyPath)
 	log.Printf("[ANSIBLE] Populate ansible ...")
 
 	cwd, err := os.Getwd()

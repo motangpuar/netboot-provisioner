@@ -97,7 +97,7 @@ func AddItemToFile(ip, mac, osType, secret string) {
 	defer file.Close()
 
 	writer := bufio.NewWriter(file)
-	_, err = fmt.Fprintf(writer, "%s,%s,pxelinux.0,%s\n", ip, mac, osType )
+	_, err = fmt.Fprintf(writer, "%s,%s,pxelinux.0,%s,,,,\n", ip, mac, osType )
 	if err != nil {
 		log.Printf("[FILE] Error: %v", err)
 		return

@@ -1,12 +1,19 @@
 package main
 
 import (
+	"fmt"
+	"encoding/csv"
 	"context"
 	"flag"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+	"crypto/ed25519"
+	"crypto/rand"
+	"crypto/x509"
+	"encoding/pem"
+	"golang.org/x/crypto/ssh"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/motangpuar/o2-ims-worker/internal/config"
@@ -35,6 +42,7 @@ func main()  {
 	log.Println("[*]------------------------------------------------------")
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
+		log.Printf("Missing inputs/clients.csv ; Please create and populate")
 		log.Fatal(err)
 	}
 
@@ -63,10 +71,39 @@ func main()  {
 		}
 	}()
 
-	err = watcher.Add("./inputs/")
-	if err != nil {
-		log.Fatal(err)
+	// Make sure essential path exists
+	essentialPaths := []string{
+		"./inputs/",
+		"./assets/keys/",
+		"./templates/keys/",
+		"assets/http/",
+		"assets/tftp/bios/pxelinux.cfg/",
+		"assets/tftp/efi/grub/x86_64-efi",
 	}
+
+	for _,path := range essentialPaths {
+		err := makeEssentialPaths(path)
+		if err != nil {
+			log.Fatalf("[MAIN] Error creating path %s with error:\n %v", path, err.Error())
+		}
+	}
+
+	// Generate SSH Key
+	sshKeyPath := cfg.General.GetSSHKeyPath()
+	if err := GenerateSSHKeyPair(sshKeyPath); err != nil {
+		log.Printf("[MAIN] SSH Error %v", err)
+		os.Exit(1)
+	}
+	log.Printf("[SUCCESS] SSH key pair generated at ./assets/keys")
+
+
+	// Check CSV
+	err = EnsureMachinesCSV("inputs/clients.csv")
+
+	if err != nil {
+		log.Fatalf("[MAIN] Failed to create client.csv: %v: err", err)
+	}
+
 
 	// Init filedata 
 	filedata.Populate(cfg.General.GetSecret())
@@ -122,4 +159,75 @@ func main()  {
 
 }
 
+
+func makeEssentialPaths(path string) error {
+	// Make sure assers path exists
+	_,err := os.Stat(path)
+	if os.IsNotExist(err) {
+		err := os.MkdirAll(path, os.ModePerm)
+		if err != nil {
+			log.Fatal(err)
+		}
+		return nil
+	} else if err != nil {
+			log.Fatal(err)
+	} else {
+		log.Printf("[MAIN] %s path exists!",path)
+		return nil
+	}
+	return err
+}
+
+func EnsureMachinesCSV(path string) error {
+	if _, err := os.Stat(path); err == nil {
+		return nil
+	}
+
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	w := csv.NewWriter(f)
+	w.Write([]string{"IP", "MAC", "BOOTFILE", "TYPE", "CLUSTER", "TEMPLATE", "ROLE", "GATEWAY"})
+	w.Flush()
+	return w.Error()
+}
+
+
+func GenerateSSHKeyPair(keyPath string) error {
+
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		return fmt.Errorf("failed to generate key pair: %w", err)
+	}
+
+	privBytes, err := x509.MarshalPKCS8PrivateKey(priv)
+	if err != nil {
+		return fmt.Errorf("failed to marshal private key: %w", err)
+	}
+	privPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "PRIVATE KEY",
+		Bytes: privBytes,
+	})
+
+	sshPub, err := ssh.NewPublicKey(pub)
+	if err != nil {
+		return fmt.Errorf("failed to convert public key: %w", err)
+	}
+	pubAuthKey := ssh.MarshalAuthorizedKey(sshPub)
+
+	privPath := keyPath
+	pubPath := keyPath + ".pub"
+
+	if err := os.WriteFile(privPath, privPEM, 0600); err != nil {
+		return fmt.Errorf("failed to write private key: %w", err)
+	}
+	if err := os.WriteFile(pubPath, pubAuthKey, 0644); err != nil {
+		return fmt.Errorf("failed to write public key: %w", err)
+	}
+
+	return nil
+}
 

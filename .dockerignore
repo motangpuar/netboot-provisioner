@@ -1,1 +1,8 @@
+bin/
 assets/
+.git/
+.github/
+*.md
+Makefile
+scripts/
+.env
