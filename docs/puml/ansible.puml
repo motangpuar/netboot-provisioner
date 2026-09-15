@@ -5,16 +5,6 @@ namespace ansible {
         + Plays []<font color=blue>struct</font>{[]<font color=blue>struct</font>{<font color=blue>map</font>[string]<font color=blue>struct</font>{<font color=blue>interface</font>{}}}}
 
     }
-    class "K3sConfig" << (S,Aquamarine) >> {
-        + ServerIP string
-        + DisableComponents string
-        + CPUManagerPolicy string
-        + SystemReservedCPU string
-        + KubeReservedCPU string
-        + SystemReservedMem string
-        + KubeReservedMem string
-
-    }
     class "K3sCreds" << (S,Aquamarine) >> {
         + Server string
         + Token string

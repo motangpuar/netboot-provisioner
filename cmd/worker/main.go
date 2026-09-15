@@ -49,7 +49,7 @@ func main()  {
 				}
 				if event.Name == "inputs/clients.csv" {
 					log.Println("[*] Filename Filter:", event.Name) 
-					filedata.Populate()
+					filedata.Populate(cfg.General.GetSecret())
 					continue
 				}
 				log.Printf("File Watcher Event: %s ", event.String()) 
@@ -69,7 +69,7 @@ func main()  {
 	}
 
 	// Init filedata 
-	filedata.Populate()
+	filedata.Populate(cfg.General.GetSecret())
 
 	// Create Pointer for TFTP & DHCP Config
 	tftpCfgPtr := cfg.TFTP
@@ -86,6 +86,7 @@ func main()  {
 	log.Println(dhcpCfgPtr.NextServe())
 	log.Println(dhcpCfgPtr.BootFilePath())
 	log.Println()
+
 	//----------------------------------------------
 	log.Println("[TFTP].........")
 	log.Println(tftpCfgPtr.BindAddr())

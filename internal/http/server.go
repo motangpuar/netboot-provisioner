@@ -9,6 +9,7 @@ import "github.com/motangpuar/o2-ims-worker/internal/db"
 import "github.com/motangpuar/o2-ims-worker/internal/inventory"
 import "github.com/motangpuar/o2-ims-worker/internal/ansible"
 import "github.com/motangpuar/o2-ims-worker/internal/kubernetes"
+import "github.com/motangpuar/o2-ims-worker/internal/config"
 import "slices"
 
 type HTTPError struct {
@@ -86,8 +87,9 @@ func handlePipeline(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
-		
-		filedata.AddItemToFile(pipe.IP, pipe.Mac, pipe.OS)
+		secret := config.Gather().General.GetSecret()
+		log.Printf("[HTTP] Secret: %s", secret)
+		filedata.AddItemToFile(pipe.IP, pipe.Mac, pipe.OS, secret)
 	case http.MethodGet:
 		log.Printf("[HTTP] Request for pipeline: %s", r.URL.Path)
 		jsonPayload := make(map[string]any)

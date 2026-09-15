@@ -9,6 +9,11 @@ import (
 	"time"
 )
 
+type ConfigReader interface {
+	GetSecret() string
+}
+
+
 type CentOSSpecific struct {
 	Initrd string
 	IP string

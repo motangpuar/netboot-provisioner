@@ -27,6 +27,11 @@ type DHCPConfig struct {
 type Master struct {
 	TFTP *TFTPConfig
 	DHCP *DHCPConfig
+	General *GeneralConfig
+}
+
+type GeneralConfig struct {
+	secretKey string
 }
 
 func Gather() *Master {
@@ -39,7 +44,6 @@ func Gather() *Master {
 
 	fmt.Println(*kubeconfig)
 	fmt.Println(*insecure)
-
 
 	// Initialize Struct with Values first
 	tftpConfig := TFTPConfig{
@@ -102,6 +106,11 @@ func Gather() *Master {
 		bootFilePath: "pxelinux.0", // Default path
 	}
 
+	generalConfig := GeneralConfig{}
+
+	if val := os.Getenv("SECRET_KEY"); val != "" {
+		generalConfig.secretKey = val
+	}
 
 	if val := os.Getenv("DHCP_ENABLE"); val != "" {
 		if boolVal,err := strconv.ParseBool(val); err == nil {
@@ -145,6 +154,7 @@ func Gather() *Master {
 	return &Master {
 		TFTP: &tftpConfig,
 		DHCP: &dhcpConfig,
+		General: &generalConfig,
 	}
 }
 
@@ -164,4 +174,7 @@ func (t *TFTPConfig) BindAddr() string { return t.bindAddr }
 func (t *TFTPConfig) Enabled() bool { return t.enabled }
 func (t *TFTPConfig) BindPort() int { return t.bindPort }
 func (t *TFTPConfig) BlockSize() int { return t.blockSize }
+
+// General Methods
+func (g *GeneralConfig) GetSecret() string { return g.secretKey } 
 
