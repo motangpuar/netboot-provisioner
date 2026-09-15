@@ -1,8 +1,21 @@
 #!/bin/bash
 
-VM="ims-debian-cluster-01"
-BRIDGE="br1"
-MAC="52:54:00:e2:47:eb"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -v|--verbose) VERBOSE=1 ;;
+    -n|--name) VM="$2"; shift ;;
+    -b|--bridge) BRIDGE="$2"; shift ;;
+    -m|--mac) MAC="$2"; shift ;;
+    --) shift; break ;;
+    *) echo "Unknown: $1"; exit 1 ;;
+  esac
+  shift
+done
+
+VM="${VM:-unnamed}"
+PORT="${PORT:-8080}"
+BRIDGE="${BRIDGE:-tinkbr0}"
+MAC="${MAC:-52:54:00:e2:47:eb}"
 
 # 1. Generate XML (VM is NOT created/started)
 sudo virt-install \
@@ -10,7 +23,7 @@ sudo virt-install \
   --memory 8192 \
   --vcpus 2 \
   --disk path=/var/lib/libvirt/images/${VM}.qcow2,size=20,format=qcow2 \
-  --network bridge=br1,model=virtio,mac=${MAC} \
+  --network bridge=${BRIDGE},model=virtio,mac=${MAC} \
   --boot uefi,network \
   --graphics vnc,listen=0.0.0.0 \
   --os-variant debian12 \

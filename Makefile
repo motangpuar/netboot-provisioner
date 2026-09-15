@@ -6,7 +6,7 @@ IMAGE  ?= alpine:latest
 
 
 # Local Inputs/Outputs
-REPO_FILE ?= centos10-mirror.repo
+REPO_FILE ?= ./templates/repo/centos10-mirror.repo
 DEST_DIR  ?= ./assets/mirros/
 CENTOS_VERSION ?= stream10
 

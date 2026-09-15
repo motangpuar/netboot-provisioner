@@ -43,7 +43,7 @@ Bare-metal provisioning tools either assume a specific distro's installer ecosys
 
 ## Requirements
 
-- Go 1.2x or later (confirm your actual minimum)
+- Go 1.2x or later
 - Ansible installed on the provisioner host
 - A network segment where this tool can run DHCP without conflicting with an existing DHCP server
 - Target machines with PXE-capable NICs, UEFI or legacy BIOS

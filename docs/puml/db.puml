@@ -3,6 +3,7 @@ top to bottom direction
 namespace db {
     interface "Client"  {
         + OfferIP() string
+        + OfferGateway() string
         + MACAddress() string
         + BootFileUrl() string
         + OSType() string
@@ -15,12 +16,14 @@ namespace db {
     class "dhcpClients" << (S,Aquamarine) >> {
         - userID string
         - offerIP string
+        - offerGateway string
         - macAddress string
         - bootFileUrl string
         - osType string
         - machineObject inventory.MachineObject
 
         + OfferIP() string
+        + OfferGateway() string
         + MACAddress() string
         + BootFileUrl() string
         + OSType() string

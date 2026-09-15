@@ -29,6 +29,7 @@ namespace inventory {
         + InstallKickStartURL string
         + InstallRepoURL string
         + Stage2 string
+        + PreSeedDetails *CentOSConfig
 
     }
     class "CoreOSSpecifc" << (S,Aquamarine) >> {
@@ -49,6 +50,9 @@ namespace inventory {
     class "DebianSpecific" << (S,Aquamarine) >> {
         + Initrd string
         + PreeSeedURL string
+        + Hostname string
+        + Domain string
+        + PreSeedDetails *DebianConfig
 
     }
     class "MachineObject" << (S,Aquamarine) >> {
@@ -81,6 +85,7 @@ namespace inventory {
         + CloudConfigURL string
         + DS string
         + RootPath string
+        + PreSeedDetails *UbuntuConfig
 
     }
     class "installedMachines" << (S,Aquamarine) >> {
@@ -98,7 +103,10 @@ namespace inventory {
 "inventory.BaseConfig" *-- "extends""inventory.UbuntuConfig"
 
 
+"inventory.CentOSSpecific""uses" o-- "inventory.CentOSConfig"
+"inventory.DebianSpecific""uses" o-- "inventory.DebianConfig"
 "inventory.MachineObject""uses" o-- "inventory.any"
+"inventory.UbuntuSpecific""uses" o-- "inventory.UbuntuConfig"
 "inventory.installedMachines""uses" o-- "inventory.MachineObject"
 "inventory.installedMachines""uses" o-- "time.Time"
 "inventory.ptrMachines""uses" o-- "inventory.MachineObject"

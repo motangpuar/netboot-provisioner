@@ -72,7 +72,7 @@ func AddItem(ip, mac, osType string) {
 
 }
 
-func AddItemToFile(ip, mac, osType string) {
+func AddItemToFile(ip, mac, osType, secret string) {
 	
 	clients := Gather().Clients
 
@@ -108,11 +108,11 @@ func AddItemToFile(ip, mac, osType string) {
 		log.Printf("[FILE] Error flush: %v", err)
 	}
 
-	Populate()
+	Populate(secret)
 
 }
 
-func Populate() {
+func Populate(secret string) {
 	log.Println("[Static DB Realm]")
 
 	newClients1 := dhcpClients{
